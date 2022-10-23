@@ -15,6 +15,7 @@ export const mongoPassword = process.env.MONGO_PASSWORD;
 export const mongoHost = process.env.MONGO_HOST;
 export const mongoPort = Number(process.env.MONGO_PORT);
 
+export const sshKeyFile = String(process.env.SSH_KEY_FILE);
 export const sshHost = process.env.SSH_HOST;
 export const sshUser = process.env.SSH_USER;
 export const sshPort = Number(process.env.SSH_PORT);
@@ -25,7 +26,7 @@ export const mongoUrl = `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}:${
 export const sshConfig: Config = {
   username: sshUser,
   host: sshHost,
-  privateKey: fs.readFileSync('src/key/trending.pem'),
+  privateKey: fs.readFileSync(sshKeyFile),
   port: sshPort,
   dstHost: mongoHost,
   dstPort: mongoPort
