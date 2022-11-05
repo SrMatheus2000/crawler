@@ -1,9 +1,11 @@
 import { port } from './configs/appConfig';
 import WebsiteScanRoute from './routes/websiteScanRoute';
+import cors from 'cors';
 import express, { json, Express } from 'express';
 
 const app: Express = express();
 
+app.use(cors());
 app.use(json());
 
 app.use('/', WebsiteScanRoute);

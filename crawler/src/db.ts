@@ -4,6 +4,10 @@ import tunnel from 'tunnel-ssh';
 
 (async () => {
   try {
+    if (process.env.DEVELOPMENT) {
+      connectToMongo();
+      return;
+    }
     tunnel(sshConfig, async (error) => {
       if (error) {
         console.log('Error connecting to ssh: ');
@@ -11,14 +15,18 @@ import tunnel from 'tunnel-ssh';
         return;
       }
       console.log('Connected to ssh');
-      await connect(mongoUrl);
-      console.log('Connected to mongo');
+      connectToMongo();
     });
   } catch (error) {
     console.log(`Error connecting to ${mongoUrl.replace(/\/\/[^@]*@/, '//<credential>@')}`);
     console.error(error);
   }
 })();
+
+async function connectToMongo() {
+  await connect(mongoUrl);
+  console.log('Connected to mongo');
+}
 
 export const CookieSchema = new Schema({
   name: String,

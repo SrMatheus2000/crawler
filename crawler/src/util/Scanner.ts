@@ -9,6 +9,12 @@ import { Browser, launch, Page, Protocol } from 'puppeteer';
 
 
 class Scanner {
+  private status = 'Not started';
+  setStatus = (status: string) => {
+    console.log(status);
+    this.status = status;
+  };
+
   private maxUrls = 0;
 
   private scanId: string | null = null;
@@ -60,28 +66,29 @@ class Scanner {
    * Metodo externo para iniciar o processo de scan
    */
   public scanWebsite = async () => {
-    console.log(`Starting scan for ${this.url}`);
-
+    this.setStatus(`Starting scan for ${this.url}`);
+    await this.saveScan();
     this.browser = await launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
       headless: false
     });
 
-    console.log(`Scanning robots.txt from ${this.url}`);
+    this.setStatus(`Scanning robots.txt from ${this.url}`);
+    await this.saveScan();
     //* Escanear robots.txt
     const foundLinks = await getSitemapLinks(removeTrailingSlash(this.url));
     foundLinks.forEach(link => this.addLink(link));
     //* -------------------
-
     this.startTime = performance.now();
-
-    console.log(`Crawling ${this.url}`);
+    
+    this.setStatus(`Crawling ${this.url}`);
+    await this.saveScan();
     this.enqueueLinks();
     await this.queue.isRunning();
 
     if (this.browser?.isConnected()) this.browser.close();
 
-    console.log(`Finished scan for ${this.url}`);
+    this.setStatus(`Finished scan for ${this.url}`);
     return this.makeResults();
   };
 
@@ -122,12 +129,13 @@ class Scanner {
     return {
       imports: Array.from(this.imports),
       links,
+      status: this.status,
       scripts: Array.from(this.scripts),
       cookies: this.cookies,
       forms: this.forms,
       localStorage: this.localStorage,
       sessionStorage: this.sessionStorage,
-      urlCount: this.links.size,
+      // urlCount: this.links.size,
       cookieCount: this.cookies.length,
       formCount, formFieldCount,
       localStorageCount: Object.keys(this.localStorage).length,
@@ -136,7 +144,8 @@ class Scanner {
       importCount: this.imports.size,
       scriptsCount: this.scripts.size,
       errorCount: this.errorLinks.length,
-      httpLinkCount: links.reduce((count, link) => link.startsWith('http://') ? ++count : count, 0)
+      httpLinkCount: links.reduce((count, link) => link.startsWith('http://') ? ++count : count, 0),
+      ...this.makePercentage()
     };
   };
 
@@ -161,6 +170,10 @@ class Scanner {
         } else {
           request.continue();
         }
+      });
+
+      page.on('dialog', async dialog => {
+        await dialog.dismiss();
       });
 
       try {
@@ -201,11 +214,11 @@ class Scanner {
       this.errorLinks.push(url);
     } finally {
 
-      await Scan.updateOne({
-        _id: this.scanId
-      }, this.makeResults());
+      await this.saveScan();
 
       const { linksAnalized, urlCount, percentage, remainingTime } = this.makePercentage();
+
+      this.status = `Scanned ${url}`;
 
       console.log(
         url,
@@ -405,6 +418,12 @@ class Scanner {
         }
       } else return;
     });
+  };
+
+  private saveScan = async () => {
+    return Scan.updateOne({
+      _id: this.scanId
+    }, this.makeResults());
   };
 }
 

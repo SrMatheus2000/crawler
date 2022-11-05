@@ -22,13 +22,13 @@ export const getBaseUrl = (url = '') => {
 
 
 export const estimateTime = (linksAnalized: number, linksToAnalize: number, timeExpent: number) => {
-
+  if (!linksAnalized) return 'N/A';
   //* regra de 3 basica
   //* linksAnalized  ---- timeExpent
   //* linksToAnalize ---- x
   const milliseconds = (linksToAnalize * timeExpent) / linksAnalized;
 
-  return humanizeDuration(milliseconds - timeExpent, { maxDecimalPoints: 2, language: 'pt' });
+  return humanizeDuration(milliseconds - timeExpent, { maxDecimalPoints: 2, language: 'en' });
 };
 
 export const fixProtocol = (url = '') => {
